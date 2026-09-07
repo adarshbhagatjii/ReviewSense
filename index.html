@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Insights AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --mint: #00C896;
+            --mint-deep: #00B389;
+            --mint-light: #E4FBF3;
+            --mint-glow: rgba(0, 200, 150, 0.28);
+            --ink: #0F1512;
+            --gray-700: #3F4744;
+            --gray-500: #6E7772;
+            --gray-400: #96A19B;
+            --border: #E7ECE9;
+            --bg-page: #EBEEEC;
+            --white: #FFFFFF;
+            --radius-xl: 24px;
+            --radius-lg: 18px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--bg-page);
+            color: var(--ink);
+            font-size: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .app-shell {
+            width: 100%;
+            max-width: 1440px;
+            height: calc(100vh - 40px);
+            min-height: 620px;
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            box-shadow: 0 20px 60px rgba(15, 21, 18, 0.10);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== Top bar ===== */
+        .topbar {
+            height: 62px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-mark {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #35E0B4, var(--mint-deep));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .brand-mark svg {
+            width: 17px;
+            height: 17px;
+            stroke: white;
+        }
+
+        .brand-name {
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+        }
+
+        .nav-tabs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-tab {
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13.5px;
+            font-weight: 500;
+            color: var(--gray-500);
+            cursor: pointer;
+        }
+
+        .nav-tab.active {
+            background: var(--ink);
+            color: white;
+            font-weight: 600;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .live-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 13px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .live-pill .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--mint);
+            box-shadow: 0 0 0 3px var(--mint-light);
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 12px 5px 5px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FFB380, #FF7A5C);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .user-chip span {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        /* ===== Body layout ===== */
+        .body-row {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+        }
+
+        /* ===== Sidebar ===== */
+        .sidebar {
+            width: 250px;
+            flex-shrink: 0;
+            border-right: 1px solid var(--border);
+            padding: 18px 14px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--white);
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--ink);
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(15, 21, 18, 0.04);
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+
+        .new-chat-btn:hover {
+            border-color: var(--mint);
+            background: var(--mint-light);
+        }
+
+        .new-chat-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .side-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gray-400);
+            margin: 20px 6px 8px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--gray-700);
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .menu-item:hover {
+            background: #F4F7F5;
+        }
+
+        .menu-item .icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            background: var(--mint-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .menu-item .icon svg {
+            width: 13px;
+            height: 13px;
+            stroke: var(--mint-deep);
+        }
+
+        .history-item {
+            padding: 8px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 12.5px;
+            color: var(--gray-500);
+            cursor: default;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-spacer {
+            flex: 1;
+        }
+
+        .profile-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            margin-top: 8px;
+        }
+
+        .profile-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8FD9C4, #3FAF8C);
+            flex-shrink: 0;
+        }
+
+        .profile-meta .name {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .profile-meta .email {
+            font-size: 11px;
+            color: var(--gray-400);
+        }
+
+        /* ===== Main panel ===== */
+        .main-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            position: relative;
+            background:
+                radial-gradient(ellipse 700px 420px at 50% 8%, var(--mint-light) 0%, rgba(228, 251, 243, 0) 70%);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            overflow-anchor: none;
+            padding: 30px 40px 10px;
+
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+
+            scroll-behavior: smooth;
+        }
+
+        /* ===== Welcome hero ===== */
+        .welcome-message {
+            max-width: 720px;
+            margin: 20px auto 0;
+            text-align: center;
+        }
+
+        .hero-glow {
+            width: 62px;
+            height: 62px;
+            margin: 0 auto 26px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #4CE0BB, var(--mint-deep));
+            box-shadow: 0 0 0 10px var(--mint-light), 0 0 40px var(--mint-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-glow svg {
+            width: 26px;
+            height: 26px;
+            stroke: white;
+        }
+
+        .welcome-message h1 {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            margin-bottom: 26px;
+        }
+
+        .welcome-message h1 .accent {
+            color: var(--mint-deep);
+        }
+
+        .topic-pills {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .topic-pill {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            font-size: 12.8px;
+            font-weight: 500;
+            color: var(--gray-700);
+            cursor: pointer;
+            transition: border-color 0.15s ease, transform 0.15s ease;
+        }
+
+        .topic-pill:hover {
+            border-color: var(--mint);
+            transform: translateY(-1px);
+        }
+
+        .topic-pill svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--mint-deep);
+        }
+
+        .sources-row {
+            margin-top: 42px;
+        }
+
+        .sources-row .label {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--gray-400);
+            margin-bottom: 14px;
+        }
+
+        .sources-icons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .source-badge {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--white);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gray-700);
+        }
+
+        /* ===== Messages ===== */
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 700px;
+            width: 100%;
+            margin: 0 auto;
+            animation: rise 0.2s ease;
+        }
+
+        @keyframes rise {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-weight: 700;
+            font-size: 11px;
+            color: white;
+        }
+
+        .message.bot .message-avatar {
+            background: radial-gradient(circle at 30% 30%, #4CE0BB, var(--mint-deep));
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #FFB380, #FF7A5C);
+        }
+
+        .message-content {
+            max-width: 80%;
+            padding: 13px 16px;
+            border-radius: var(--radius-md);
+            line-height: 1.6;
+            font-size: 13.8px;
+        }
+
+        /* When a bot message contains cards, let it stretch wider */
+        .message.bot .message-content:has(.review-card) {
+            max-width: 100%;
+        }
+
+        .message.bot .message-content {
+            background: var(--white);
+            color: var(--ink);
+            border: 1px solid var(--border);
+            border-top-left-radius: 4px;
+        }
+
+        .message.user .message-content {
+            background: var(--ink);
+            color: white;
+            border-top-right-radius: 4px;
+        }
+
+        .message-content p {
+            margin: 0 0 8px;
+        }
+
+        .message-content p:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .message-content ul,
+        .message-content ol {
+            margin: 6px 0 10px 18px;
+        }
+
+        .message-content code {
+            background: rgba(0, 0, 0, 0.06);
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 12.3px;
+        }
+
+        .message.user .message-content code {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        .message-time {
+            font-size: 10.5px;
+            opacity: 0.5;
+            margin-top: 4px;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 12px;
+            max-width: 700px;
+            width: 100%;
+            margin: 0 auto;
+            align-self: flex-start;
+        }
+
+        .typing-indicator .message-avatar {
+            background: radial-gradient(circle at 30% 30%, #4CE0BB, var(--mint-deep));
+        }
+
+        .typing-dots {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 13px 16px;
+            border-radius: var(--radius-md);
+            border-top-left-radius: 4px;
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--gray-400);
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.6;
+            }
+
+            30% {
+                transform: translateY(-6px);
+                opacity: 1;
+            }
+        }
+
+        /* ===== Retrieval footer / review cards ===== */
+        .retrieval-footer {
+            margin-top: 10px;
+            padding: 7px 12px;
+            background: var(--mint-light);
+            border-left: 3px solid var(--mint-deep);
+            border-radius: 6px;
+            font-size: 11.5px;
+            color: var(--gray-700);
+        }
+
+        .review-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 13px 15px;
+            margin: 6px 0;
+            font-size: 12.8px;
+            line-height: 1.6;
+            box-shadow: 0 1px 4px rgba(15, 21, 18, 0.04);
+            transition: box-shadow 0.15s ease;
+        }
+
+        .review-card:hover {
+            box-shadow: 0 3px 10px rgba(15, 21, 18, 0.08);
+        }
+
+        .review-card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .review-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10.5px;
+            font-weight: 600;
+        }
+
+        .review-badge.id {
+            background: var(--mint-light);
+            color: var(--mint-deep);
+        }
+
+        .review-badge.country {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .review-badge.rating {
+            background: #FDE7DD;
+            color: #B5442A;
+        }
+
+        .review-badge.date {
+            background: #F3F4F6;
+            color: #374151;
+        }
+
+        .review-card-title {
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 4px;
+        }
+
+        .review-card-reviewer {
+            font-size: 11.5px;
+            color: var(--gray-500);
+            margin-bottom: 6px;
+        }
+
+        .review-card-body {
+            color: var(--ink);
+        }
+
+        /* ===== Input bar ===== */
+        .chat-input-container {
+            padding: 14px 40px 26px;
+        }
+
+        .chat-input-shell {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 10px 30px rgba(15, 21, 18, 0.07);
+            overflow: hidden;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px 8px;
+        }
+
+        .plus-btn {
+            width: 26px;
+            height: 26px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--white);
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .plus-btn svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            font-family: inherit;
+            background: transparent;
+            color: var(--ink);
+        }
+
+        .chat-input::placeholder {
+            color: var(--gray-400);
+        }
+
+        .input-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px 12px;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .auto-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        .auto-pill svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .ghost-icon-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--gray-400);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .ghost-icon-btn:hover {
+            background: #F4F7F5;
+            color: var(--gray-700);
+        }
+
+        .ghost-icon-btn svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .send-button {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--mint);
+            color: white;
+            border: none;
+            padding: 9px 16px;
+            border-radius: 18px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .send-button:hover {
+            background: var(--mint-deep);
+        }
+
+        .send-button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .send-button svg {
+            width: 13px;
+            height: 13px;
+            fill: white;
+        }
+
+        /* ===== Scrollbars ===== */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #DCE3DF;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 980px) {
+            .sidebar {
+                display: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .nav-tabs {
+                display: none;
+            }
+
+            .chat-messages,
+            .chat-input-container {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <!-- Top bar -->
+        <div class="topbar">
+            <div class="brand">
+                <div class="brand-mark">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="9" />
+                        <path
+                            d="M3 12h18M12 3c2.5 2.7 3.8 6 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-6-3.8-9s1.3-6.3 3.8-9z" />
+                    </svg>
+                </div>
+                <div class="brand-name">ReviewSense</div>
+            </div>
+            <div class="topbar-right">
+                <div class="live-pill"><span class="dot"></span> 21,214 reviews indexed</div>
+                <div class="user-chip">
+                    <div class="user-avatar">GU</div>
+                    <span>Session #A28F1C</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="body-row">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <button class="new-chat-btn" onclick="clearChat()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    New chat
+                </button>
+
+                <div class="side-label">Explore</div>
+                <div class="menu-item" onclick="sendSuggestion('What are customers saying about delivery problems?')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="3" width="15" height="13" />
+                            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                            <circle cx="5.5" cy="18.5" r="2.5" />
+                            <circle cx="18.5" cy="18.5" r="2.5" />
+                        </svg></span>
+                    Delivery Issues
+                </div>
+                <div class="menu-item"
+                    onclick="sendSuggestion('What complaints do customers have about product quality?')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z" />
+                        </svg></span>
+                    Product Quality
+                </div>
+                <div class="menu-item"
+                    onclick="sendSuggestion('How do customers describe their customer service experience?')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg></span>
+                    Customer Service
+                </div>
+                <div class="menu-item" onclick="sendSuggestion('What are the main reasons for 1-star reviews?')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg></span>
+                    Low Ratings
+                </div>
+                <div class="menu-item"
+                    onclick="sendSuggestion('What do customers say about refund and return experiences?')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg></span>
+                    Refunds &amp; Returns
+                </div>
+                <div class="menu-item"
+                    onclick="sendSuggestion('Summarize the most common complaints across all reviews')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="8" y1="6" x2="21" y2="6" />
+                            <line x1="8" y1="12" x2="21" y2="12" />
+                            <line x1="8" y1="18" x2="21" y2="18" />
+                            <line x1="3" y1="6" x2="3.01" y2="6" />
+                            <line x1="3" y1="12" x2="3.01" y2="12" />
+                            <line x1="3" y1="18" x2="3.01" y2="18" />
+                        </svg></span>
+                    Top Complaints
+                </div>
+                <div class="menu-item" onclick="sendSuggestion('What are customers praising most in 5-star reviews?')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.3a2 2 0 0 0 2-1.7l1.4-9a2 2 0 0 0-2-2.3z" />
+                        </svg></span>
+                    Positive Feedback
+                </div>
+                <div class="menu-item"
+                    onclick="sendSuggestion('Compare what US and UK customers say about their experience')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="2" y1="12" x2="22" y2="12" />
+                            <path
+                                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                        </svg></span>
+                    US vs UK
+                </div>
+                <div class="menu-item"
+                    onclick="sendSuggestion('What do customers say about packaging and product condition on arrival?')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path
+                                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                        </svg></span>
+                    Packaging
+                </div>
+                <div class="menu-item" onclick="sendSuggestion('How many total reviews are there in the database?')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                        </svg></span>
+                    Review Stats
+                </div>
+
+                <div class="side-label">Quick Lookup</div>
+                <div class="menu-item" onclick="sendSuggestion('Show review ID 1')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg></span>
+                    Review ID 1
+                </div>
+                <div class="menu-item" onclick="sendSuggestion('Show 10 reviews from India')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="2" y1="12" x2="22" y2="12" />
+                            <path
+                                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                        </svg></span>
+                    10 India Reviews
+                </div>
+                <div class="menu-item" onclick="sendSuggestion('Show 10 reviews from United States')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <polyline points="9 22 9 12 15 12 15 22" />
+                        </svg></span>
+                    10 US Reviews
+                </div>
+                <div class="menu-item" onclick="sendSuggestion('Show 10 one-star reviews')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path
+                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg></span>
+                    10 × 1-Star
+                </div>
+                <div class="menu-item" onclick="sendSuggestion('Show 10 five-star reviews')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z" />
+                        </svg></span>
+                    10 × 5-Star
+                </div>
+                <div class="menu-item" onclick="sendSuggestion('How many reviews are from United Kingdom?')">
+                    <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="20" x2="18" y2="10" />
+                            <line x1="12" y1="20" x2="12" y2="4" />
+                            <line x1="6" y1="20" x2="6" y2="14" />
+                        </svg></span>
+                    Count UK Reviews
+                </div>
+
+                <div class="side-label">Recent</div>
+                <div class="history-item">What are the top return reasons?</div>
+                <div class="history-item">Summarize refund complaints</div>
+
+                <div class="sidebar-spacer"></div>
+
+                <div class="profile-card">
+                    <div class="profile-avatar"></div>
+                    <div class="profile-meta">
+                        <div class="name">Guest User</div>
+                        <div class="email">guest@reviewsense.ai</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main panel -->
+            <div class="main-panel">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="welcome-message">
+                        <div class="hero-glow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3" />
+                                <path
+                                    d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />
+                            </svg>
+                        </div>
+                        <h1>Hey, I'm <span class="accent">ReviewSense</span>. How can I help today?</h1>
+
+                        <div class="topic-pills">
+                            <div class="topic-pill"
+                                onclick="sendSuggestion('What are customers saying about delivery problems?')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="1" y="3" width="15" height="13" />
+                                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                                </svg>
+                                Delivery Issues
+                            </div>
+                            <div class="topic-pill"
+                                onclick="sendSuggestion('What are the main reasons for 1-star reviews?')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                Low Ratings
+                            </div>
+                            <div class="topic-pill"
+                                onclick="sendSuggestion('What are customers praising most in 5-star reviews?')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z" />
+                                </svg>
+                                5-Star Praise
+                            </div>
+                            <div class="topic-pill"
+                                onclick="sendSuggestion('What do customers say about refund and return experiences?')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                                </svg>
+                                Refunds
+                            </div>
+                            <div class="topic-pill"
+                                onclick="sendSuggestion('Compare what US and UK customers say about their experience')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="2" y1="12" x2="22" y2="12" />
+                                </svg>
+                                US vs UK
+                            </div>
+                            <div class="topic-pill"
+                                onclick="sendSuggestion('How do customers describe their customer service experience?')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                </svg>
+                                Customer Service
+                            </div>
+                            <div class="topic-pill"
+                                onclick="sendSuggestion('What do customers say about packaging and product condition on arrival?')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path
+                                        d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                                </svg>
+                                Packaging
+                            </div>
+                            <div class="topic-pill"
+                                onclick="sendSuggestion('Summarize the most common complaints across all reviews')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6" />
+                                    <line x1="8" y1="12" x2="21" y2="12" />
+                                    <line x1="8" y1="18" x2="21" y2="18" />
+                                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                                </svg>
+                                Top Complaints
+                            </div>
+                            <div class="topic-pill" onclick="sendSuggestion('Show 10 most recent reviews')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                Recent Reviews
+                            </div>
+                            <div class="topic-pill"
+                                onclick="sendSuggestion('What complaints do customers have about product quality?')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path
+                                        d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                    <line x1="12" y1="9" x2="12" y2="13" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                                </svg>
+                                Product Quality
+                            </div>
+                            <div class="topic-pill"
+                                onclick="sendSuggestion('How many total reviews are there in the database?')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7" />
+                                    <rect x="14" y="3" width="7" height="7" />
+                                    <rect x="14" y="14" width="7" height="7" />
+                                    <rect x="3" y="14" width="7" height="7" />
+                                </svg>
+                                Review Stats
+                            </div>
+                            <div class="topic-pill"
+                                onclick="sendSuggestion('What do Indian customers say about their Amazon experience?')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="2" y1="12" x2="22" y2="12" />
+                                    <path
+                                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                </svg>
+                                India Reviews
+                            </div>
+                            <div class="topic-pill" onclick="sendSuggestion('Show review ID 1')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                </svg>
+                                Review #1
+                            </div>
+                            <div class="topic-pill" onclick="sendSuggestion('Show 10 reviews from India')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="2" y1="12" x2="22" y2="12" />
+                                    <path
+                                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                </svg>
+                                10 India Reviews
+                            </div>
+                            <div class="topic-pill" onclick="sendSuggestion('Show 10 reviews from United States')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                    <polyline points="9 22 9 12 15 12 15 22" />
+                                </svg>
+                                10 US Reviews
+                            </div>
+                            <div class="topic-pill" onclick="sendSuggestion('Show 10 one-star reviews')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path
+                                        d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                    <line x1="12" y1="9" x2="12" y2="13" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                                </svg>
+                                10 × 1-Star
+                            </div>
+                            <div class="topic-pill" onclick="sendSuggestion('Show 10 five-star reviews')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z" />
+                                </svg>
+                                10 × 5-Star
+                            </div>
+                            <div class="topic-pill"
+                                onclick="sendSuggestion('How many reviews are from United Kingdom?')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="20" x2="18" y2="10" />
+                                    <line x1="12" y1="20" x2="12" y2="4" />
+                                    <line x1="6" y1="20" x2="6" y2="14" />
+                                </svg>
+                                Count UK Reviews
+                            </div>
+                            <div class="topic-pill" onclick="sendSuggestion('Show 5 reviews from Germany')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="2" y1="12" x2="22" y2="12" />
+                                    <path
+                                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                </svg>
+                                5 Germany Reviews
+                            </div>
+                        </div>
+
+                        <div class="sources-row">
+                            <div class="label">Data sources</div>
+                            <div class="sources-icons">
+                                <div class="source-badge">US</div>
+                                <div class="source-badge">UK</div>
+                                <div class="source-badge">DE</div>
+                                <div class="source-badge">IN</div>
+                                <div class="source-badge">JP</div>
+                                <div class="source-badge">+144</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-container">
+                    <div class="chat-input-shell">
+                        <div class="chat-input-wrapper">
+                            <button class="plus-btn" title="Attach">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                    <line x1="12" y1="5" x2="12" y2="19" />
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                            </button>
+                            <input type="text" class="chat-input" id="chatInput"
+                                placeholder="Ask about deliveries, ratings, refunds and more...."
+                                onkeypress="handleKeyPress(event)" />
+                        </div>
+                        <div class="input-footer">
+                            <div class="footer-left">
+                                <div class="auto-pill">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="3" />
+                                        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+                                    </svg>
+                                    Auto
+                                </div>
+                                <button class="ghost-icon-btn" title="Voice">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4" />
+                                    </svg>
+                                </button>
+                                <button class="ghost-icon-btn" title="Attach file">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path
+                                            d="M21.4 11.05l-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7L9.2 16.8a2 2 0 0 1-2.8-2.8l8.5-8.5" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <button class="send-button" id="sendButton" onclick="sendMessage()">
+                                Send
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/chat';
+        let isTyping = false;
+        function scrollToBottom() {
+            const container = document.getElementById('chatMessages');
+
+            requestAnimationFrame(() => {
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function addMessage(text, isUser = false) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const welcomeMessage = messagesContainer.querySelector('.welcome-message');
+
+            if (welcomeMessage) {
+                welcomeMessage.remove();
+
+                setTimeout(() => {
+                    scrollToBottom();
+                }, 0);
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = isUser ? 'U' : 'AI';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+
+            if (!isUser) {
+                contentDiv.innerHTML = formatBotMessage(text);
+            } else {
+                contentDiv.textContent = text;
+            }
+
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            timeDiv.textContent = getCurrentTime();
+            contentDiv.appendChild(timeDiv);
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // ── Helpers ─────────────────────────────────────────────────────────
+
+        function escHtml(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function inlineFormat(text) {
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            text = text.replace(/`(.*?)`/g, '<code>$1</code>');
+            return text;
+        }
+
+        // ── Review card parser ───────────────────────────────────────────────
+        // Supports two shapes the backend may send:
+        //
+        // Format A (pipe header), blocks separated by "---":
+        //   ID:123 | US | 1⭐ | 2023-01-01
+        //   Reviewer: John
+        //   Title: Bad product
+        //   Review: The product was terrible...
+        //
+        // Format B (labeled lines), blocks separated by a blank line:
+        //   Review ID: 182
+        //   Rating: 5★
+        //   Title: Good service
+        //   Reviewer: Diksha sharma
+        //   Date: 2024-09-13
+        //   Text: Good service
+
+        function tryParseReviewCards(text) {
+            const hasPipeFormat = /ID:\s*\d+\s*\|/.test(text);
+            // Backend sends: **Review ID:** 123  (bold wraps label + colon)
+            // Also support plain:  Review ID: 123
+            const hasLabelFormat = /(?:\*\*Review ID:\*\*|Review\s*ID:)\s*\d+/i.test(text);
+            if (!hasPipeFormat && !hasLabelFormat) return null;
+
+            // Strip the count header line if present
+            const headerMatch = text.match(/^\[\d+ review\(s\) retrieved\]\s*\n/);
+            const body = headerMatch ? text.slice(headerMatch[0].length) : text;
+
+            let cards;
+            if (hasLabelFormat) {
+                // Reviews are separated by a blank line (\n\n)
+                // Each review is 6 consecutive lines (no blank lines within a review)
+                const blocks = body.split(/\n\n+/).map(b => b.trim()).filter(Boolean);
+                cards = blocks.map(block => parseLabeledReviewBlock(block)).filter(Boolean);
+            } else {
+                const blocks = body.split(/\n\n---\n\n|\n---\n/).map(b => b.trim()).filter(Boolean);
+                cards = blocks.map(block => parseReviewBlock(block)).filter(Boolean);
+            }
+            if (!cards || cards.length === 0) return null;
+
+            return cards.map(c => buildReviewCard(c)).join('');
+        }
+
+        function parseReviewBlock(block) {
+            const lines = block.split('\n');
+            const metaLine = lines[0] || '';
+            // metaLine: "ID:123 | US | 1⭐ | 2023-01-01"
+            const metaParts = metaLine.split('|').map(p => p.trim());
+            if (metaParts.length < 1) return null;
+
+            const id = (metaParts[0] || '').replace('ID:', '').trim();
+            const country = metaParts[1] || '';
+            const rating = metaParts[2] || '';
+            const date = metaParts[3] || '';
+
+            let reviewer = '', title = '', body = '';
+            for (const line of lines.slice(1)) {
+                if (line.startsWith('Reviewer:')) reviewer = line.replace('Reviewer:', '').trim();
+                else if (line.startsWith('Title:')) title = line.replace('Title:', '').trim();
+                else if (line.startsWith('Review:')) body = line.replace('Review:', '').trim();
+            }
+
+            return { id, country, rating, date, reviewer, title, body };
+        }
+
+        function parseLabeledReviewBlock(block) {
+            // Backend format: "**Review ID:** 1" — bold wraps "Label:"
+            // Also handle plain: "Review ID: 1"
+            const fields = {};
+            for (const rawLine of block.split('\n')) {
+                const line = rawLine.trim();
+                if (!line) continue;
+
+                // Match "**Label:** value"  OR  "Label: value"
+                const m = line.match(/^\*\*([^*]+):\*\*\s*(.*)$/) ||
+                    line.match(/^([A-Za-z][A-Za-z ]*):\s*(.*)$/);
+                if (!m) continue;
+
+                const label = m[1].trim().toLowerCase();
+                const value = m[2].trim();
+                fields[label] = value;
+            }
+
+            const id = fields['review id'] || fields['id'] || '';
+            const rating = (fields['rating'] || '').replace('★', '').trim();
+            const title = (fields['title'] && fields['title'].toLowerCase() !== 'not found' && fields['title'] !== 'N/A') ? fields['title'] : '';
+            const reviewer = (fields['reviewer'] && fields['reviewer'].toLowerCase() !== 'not found' && fields['reviewer'] !== 'N/A') ? fields['reviewer'] : '';
+            const date = (fields['date'] && fields['date'] !== 'N/A') ? fields['date'] : '';
+            const country = fields['country'] || '';
+            let body = fields['text'] || fields['review'] || '';
+            if (!body || body.toLowerCase() === 'review text not found' || body === 'N/A') body = '';
+
+            if (!id && !title && !body) return null;
+            return { id, country, rating, date, reviewer, title, body };
+        }
+
+        function buildReviewCard(c) {
+            const ratingNum = parseInt(c.rating) || 0;
+            // Build star display
+            let starsHtml = '';
+            for (let i = 1; i <= 5; i++) {
+                starsHtml += `<span style="color:${i <= ratingNum ? '#F59E0B' : '#D1D5DB'}; font-size:13px;">★</span>`;
+            }
+            const borderColor = ratingNum >= 4 ? 'var(--mint-deep)' : ratingNum === 3 ? '#F59E0B' : ratingNum > 0 ? '#EF4444' : 'var(--border)';
+            return `
+        <div class="review-card" style="border-left: 3px solid ${borderColor};">
+            <div class="review-card-meta">
+                ${c.id ? `<span class="review-badge id">#${escHtml(c.id)}</span>` : ''}
+                ${c.country ? `<span class="review-badge country">📍 ${escHtml(c.country)}</span>` : ''}
+                ${ratingNum ? `<span class="review-badge rating">${starsHtml} ${ratingNum}/5</span>` : ''}
+                ${c.date ? `<span class="review-badge date">📅 ${escHtml(c.date)}</span>` : ''}
+            </div>
+            ${c.title ? `<div class="review-card-title">${escHtml(c.title)}</div>` : ''}
+            ${c.reviewer ? `<div class="review-card-reviewer">👤 ${escHtml(c.reviewer)}</div>` : ''}
+            ${c.body ? `<div class="review-card-body">${escHtml(c.body)}</div>` : ''}
+        </div>`;
+        }
+
+        // ── Main message formatter ───────────────────────────────────────────
+
+        function formatBotMessage(text) {
+            // Peel off the retrieval footer
+            const footerMatch = text.match(/\n\n---\n(\*Retrieval tools used:.*\*)$/s);
+            let mainText = text;
+            let footerHtml = '';
+            if (footerMatch) {
+                mainText = text.slice(0, footerMatch.index);
+                const footerContent = footerMatch[1]
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/^\*|\*$/g, '');
+                footerHtml = `<div class="retrieval-footer">🔍 ${footerContent}</div>`;
+            }
+
+            // If the message looks like a list of review records, render as cards
+            const cards = tryParseReviewCards(mainText.trim());
+            if (cards) return cards + footerHtml;
+
+            // Otherwise render as formatted text
+            const lines = mainText.split('\n');
+            let html = '';
+            let i = 0;
+
+            while (i < lines.length) {
+                const line = lines[i];
+
+                // Skip bare --- separators
+                if (/^---+$/.test(line.trim())) { i++; continue; }
+
+                // Bullet list
+                if (/^[-•*]\s/.test(line)) {
+                    html += '<ul>';
+                    while (i < lines.length && /^[-•*]\s/.test(lines[i])) {
+                        html += `<li>${inlineFormat(escHtml(lines[i].replace(/^[-•*]\s/, '')))}</li>`;
+                        i++;
+                    }
+                    html += '</ul>';
+                    continue;
+                }
+
+                // Numbered list
+                if (/^\d+\.\s/.test(line)) {
+                    html += '<ol>';
+                    while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
+                        html += `<li>${inlineFormat(escHtml(lines[i].replace(/^\d+\.\s/, '')))}</li>`;
+                        i++;
+                    }
+                    html += '</ol>';
+                    continue;
+                }
+
+                // Empty line
+                if (line.trim() === '') { html += '<br>'; i++; continue; }
+
+                // Default paragraph
+                html += `<p>${inlineFormat(escHtml(line))}</p>`;
+                i++;
+            }
+
+            return html + footerHtml;
+        }
+
+        // ── Typing indicator ─────────────────────────────────────────────────
+
+        function showTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+            <div class="message-avatar">AI</div>
+            <div class="typing-dots">
+                <span></span><span></span><span></span>
+            </div>`;
+            messagesContainer.appendChild(typingDiv);
+            scrollToBottom();
+        }
+
+        function removeTypingIndicator() {
+            const el = document.getElementById('typingIndicator');
+
+            if (el) {
+                el.remove();
+                scrollToBottom();
+            }
+        }
+
+        // ── Send / UI ────────────────────────────────────────────────────────
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const sendButton = document.getElementById('sendButton');
+            const question = input.value.trim();
+            if (!question || isTyping) return;
+
+            addMessage(question, true);
+            input.value = '';
+            isTyping = true;
+            input.disabled = true;
+            sendButton.disabled = true;
+            showTypingIndicator();
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                removeTypingIndicator();
+                addMessage(data.answer, false);
+                scrollToBottom();
+            } catch (error) {
+                removeTypingIndicator();
+                addMessage('Sorry, I encountered an error. Please make sure the API server is running on http://localhost:8000', false);
+                console.error('Error:', error);
+            } finally {
+                isTyping = false;
+                input.disabled = false;
+                sendButton.disabled = false;
+                input.focus();
+            }
+        }
+
+        function sendSuggestion(text) {
+            document.getElementById('chatInput').value = text;
+            sendMessage();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function clearChat() {
+            document.getElementById('chatMessages').innerHTML = `
+            <div class="welcome-message">
+                <div class="hero-glow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
+                </div>
+                <h1>Hey, I'm <span class="accent">ReviewSense</span>. How can I help today?</h1>
+
+                <div class="topic-pills">
+                    <div class="topic-pill" onclick="sendSuggestion('What are customers saying about delivery problems?')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/></svg>
+                        Delivery Issues
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('What are the main reasons for 1-star reviews?')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        Low Ratings
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('What are customers praising most in 5-star reviews?')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg>
+                        5-Star Praise
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('What do customers say about refund and return experiences?')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        Refunds
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('Compare what US and UK customers say about their experience')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                        US vs UK
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('How do customers describe their customer service experience?')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        Customer Service
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('What do customers say about packaging and product condition on arrival?')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                        Packaging
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('Summarize the most common complaints across all reviews')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                        Top Complaints
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('Show 10 most recent reviews')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Recent Reviews
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('What complaints do customers have about product quality?')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        Product Quality
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('How many total reviews are there in the database?')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        Review Stats
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('What do Indian customers say about their Amazon experience?')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        India Reviews
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('Show review ID 1')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        Review #1
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('Show 10 reviews from India')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        10 India Reviews
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('Show 10 reviews from United States')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        10 US Reviews
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('Show 10 one-star reviews')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        10 × 1-Star
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('Show 10 five-star reviews')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg>
+                        10 × 5-Star
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('How many reviews are from United Kingdom?')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        Count UK Reviews
+                    </div>
+                    <div class="topic-pill" onclick="sendSuggestion('Show 5 reviews from Germany')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        5 Germany Reviews
+                    </div>
+                </div>
+
+                <div class="sources-row">
+                    <div class="label">Data sources</div>
+                    <div class="sources-icons">
+                        <div class="source-badge">US</div>
+                        <div class="source-badge">UK</div>
+                        <div class="source-badge">DE</div>
+                        <div class="source-badge">IN</div>
+                        <div class="source-badge">JP</div>
+                        <div class="source-badge">+144</div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        window.addEventListener('load', () => {
+            document.getElementById('chatInput').focus();
+        });
+    </script>
+</body>
+
+</html>

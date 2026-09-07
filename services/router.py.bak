@@ -1,0 +1,234 @@
+# services/router.py
+#
+# Supervisor / query router.
+#
+# Classifies every incoming question into one of three modes:
+#
+#   STRUCTURED  — the user wants an exact SQL result
+#                 e.g. "show me 50 US reviews", "count 1-star reviews"
+#
+#   HYBRID      — the user has a semantic question but also names a filter
+#                 e.g. "what do US customers say about refunds?"
+#
+#   SEMANTIC    — pure natural-language question, no structured filter
+#                 e.g. "why are customers unhappy with delivery?"
+#
+# No LLM call is needed for routing.  A lightweight rule-based classifier
+# (regex + keyword matching) keeps latency at zero and is fully deterministic.
+
+import re
+from dataclasses import dataclass, field
+from typing import Optional
+
+# ---------------------------------------------------------------------------
+# Result dataclass
+# ---------------------------------------------------------------------------
+
+@dataclass
+class RouteResult:
+    mode: str                        # "STRUCTURED" | "SEMANTIC" | "HYBRID"
+    country: Optional[str] = None   # upper-cased ISO code, e.g. "US"
+    rating: Optional[int] = None    # 1-5
+    review_id: Optional[int] = None # exact row id
+    limit: Optional[int] = None     # explicit LIMIT from the query
+    action: Optional[str] = None    # sub-action for STRUCTURED queries
+    filters: dict = field(default_factory=dict)  # collected metadata filters
+
+
+# ---------------------------------------------------------------------------
+# Known country codes / names → ISO codes
+# ---------------------------------------------------------------------------
+
+_COUNTRY_MAP: dict[str, str] = {
+    # codes
+    "us": "US", "usa": "US", "uk": "GB", "gb": "GB",
+    "au": "AU", "ca": "CA", "de": "DE", "fr": "FR",
+    "in": "IN", "nl": "NL", "es": "ES", "it": "IT",
+    "br": "BR", "mx": "MX", "jp": "JP", "cn": "CN",
+    "sg": "SG", "nz": "NZ", "se": "SE", "no": "NO",
+    "dk": "DK", "fi": "FI", "pl": "PL", "be": "BE",
+    "ch": "CH", "at": "AT", "pt": "PT", "ie": "IE",
+    "za": "ZA", "ae": "AE", "sa": "SA", "ng": "NG",
+    "ke": "KE", "eg": "EG", "tr": "TR", "ru": "RU",
+    "id": "ID", "th": "TH", "my": "MY", "ph": "PH",
+    "vn": "VN", "pk": "PK", "bd": "BD", "lk": "LK",
+    "ar": "AR", "co": "CO", "cl": "CL", "pe": "PE",
+    "il": "IL", "hk": "HK", "tw": "TW", "kr": "KR",
+    # full names
+    "united states": "US", "united kingdom": "GB",
+    "australia": "AU", "canada": "CA", "germany": "DE",
+    "france": "FR", "india": "IN", "netherlands": "NL",
+    "spain": "ES", "italy": "IT", "brazil": "BR",
+    "mexico": "MX", "japan": "JP", "china": "CN",
+    "singapore": "SG", "new zealand": "NZ", "sweden": "SE",
+    "norway": "NO", "denmark": "DK", "finland": "FI",
+    "poland": "PL", "belgium": "BE", "switzerland": "CH",
+    "austria": "AT", "portugal": "PT", "ireland": "IE",
+    "south africa": "ZA", "nigeria": "NG", "kenya": "KE",
+    "turkey": "TR", "russia": "RU", "indonesia": "ID",
+    "thailand": "TH", "malaysia": "MY", "philippines": "PH",
+    "vietnam": "VN", "pakistan": "PK", "bangladesh": "BD",
+    "colombia": "CO", "chile": "CL", "peru": "PE",
+    "israel": "IL", "hong kong": "HK", "taiwan": "TW",
+    "south korea": "KR",
+}
+
+# ---------------------------------------------------------------------------
+# Regex patterns
+# ---------------------------------------------------------------------------
+
+# Detect "show me 50" / "get 100" / "list 10" etc.
+_RE_LIMIT       = re.compile(r'\b(\d+)\b')
+
+# Detect explicit review id lookup: "review 12283", "id 12283", "#12283"
+_RE_ID          = re.compile(
+    r'\b(?:review|id|row|#)\s*[=:]?\s*(\d+)\b', re.I)
+
+# Detect "show", "list", "get", "fetch", "give me", "display"
+_RE_SHOW        = re.compile(
+    r'\b(show|list|get|fetch|display|give me|retrieve|find)\b', re.I)
+
+# Detect count intent
+_RE_COUNT       = re.compile(
+    r'\b(count|how many|number of|total|tally)\b', re.I)
+
+# Detect star / rating mentions  "1 star", "5-star", "rated 3"
+_RE_RATING      = re.compile(
+    r'\b([1-5])\s*[-\s]?\s*star[s]?\b'          # "1 star", "5-stars"
+    r'|\brat(?:ed|ing)\s+([1-5])\b'             # "rated 3", "rating 2"
+    r'|\b([1-5])\s*(?:out of 5|\/5)\b',         # "3 out of 5"
+    re.I)
+
+# Semantic intent words — if the question is asking for *meaning/opinion*
+_SEMANTIC_SIGNALS = re.compile(
+    r'\b(why|what do|what are|how do|opinion|feel|think|say about|'
+    r'complain|issue|problem|experience|sentiment|review|mention|'
+    r'suggest|recommend|unhappy|happy|satisfied|dissatisfied|'
+    r'like about|hate about|love about|common|typical|main)\b', re.I)
+
+# Hybrid bridge words: "US customers say", "GB reviews about"
+_RE_HYBRID_BRIDGE = re.compile(
+    r'\b(customer[s]?|reviewer[s]?|buyer[s]?|user[s]?|people)\b', re.I)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _extract_country(text: str) -> Optional[str]:
+    """Return the first matched country code from text, or None."""
+    lower = text.lower()
+    # try multi-word names first (longer match wins)
+    for name in sorted(_COUNTRY_MAP, key=len, reverse=True):
+        if re.search(r'\b' + re.escape(name) + r'\b', lower):
+            return _COUNTRY_MAP[name]
+    return None
+
+
+def _extract_rating(text: str) -> Optional[int]:
+    m = _RE_RATING.search(text)
+    if m:
+        val = m.group(1) or m.group(2) or m.group(3)
+        return int(val)
+    return None
+
+
+def _extract_limit(text: str, default: int = 10) -> int:
+    """
+    Pull the first standalone integer from the query as the LIMIT.
+    Fall back to *default* if none found.
+    Numbers that are clearly part of a rating pattern are skipped.
+    """
+    # Remove rating-like patterns first so we don't steal those digits
+    cleaned = _RE_RATING.sub('', text)
+    # Also remove id-like patterns
+    cleaned = _RE_ID.sub('', cleaned)
+    m = _RE_LIMIT.search(cleaned)
+    if m:
+        val = int(m.group(1))
+        # sanity cap: ignore absurdly large numbers (>10000)
+        if 1 <= val <= 10_000:
+            return val
+    return default
+
+
+def _extract_review_id(text: str) -> Optional[int]:
+    m = _RE_ID.search(text)
+    return int(m.group(1)) if m else None
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+def classify_query(question: str) -> RouteResult:
+    """
+    Classify *question* and return a RouteResult describing how to handle it.
+
+    Decision logic (priority order):
+      1. ID lookup            → STRUCTURED / get_by_id
+      2. Count intent         → STRUCTURED / count
+      3. Show + no semantics  → STRUCTURED / list
+      4. Show + semantics     → HYBRID  (filter + vector search)
+      5. Has filter metadata
+         + semantic signal    → HYBRID
+      6. Everything else      → SEMANTIC
+    """
+    country   = _extract_country(question)
+    rating    = _extract_rating(question)
+    review_id = _extract_review_id(question)
+    is_show   = bool(_RE_SHOW.search(question))
+    is_count  = bool(_RE_COUNT.search(question))
+    has_sem   = bool(_SEMANTIC_SIGNALS.search(question))
+    has_bridge = bool(_RE_HYBRID_BRIDGE.search(question))
+
+    filters: dict = {}
+    if country:
+        filters["country"] = country
+    if rating is not None:
+        filters["rating"] = rating
+
+    # ── 1. Exact ID lookup ──────────────────────────────────────────────────
+    if review_id is not None:
+        return RouteResult(
+            mode="STRUCTURED", action="get_by_id",
+            review_id=review_id, filters=filters,
+        )
+
+    # ── 2. Count intent ─────────────────────────────────────────────────────
+    if is_count:
+        return RouteResult(
+            mode="STRUCTURED", action="count",
+            country=country, rating=rating, filters=filters,
+        )
+
+    # ── 3. Pure structured list (show/list/get with NO semantic signal) ─────
+    if is_show and not has_sem:
+        limit = _extract_limit(question, default=10)
+        return RouteResult(
+            mode="STRUCTURED", action="list",
+            country=country, rating=rating,
+            limit=limit, filters=filters,
+        )
+
+    # ── 4. Show + semantic signal OR bridge word → HYBRID ───────────────────
+    if is_show and (has_sem or has_bridge) and filters:
+        limit = _extract_limit(question, default=10)
+        return RouteResult(
+            mode="HYBRID",
+            country=country, rating=rating,
+            limit=limit, filters=filters,
+        )
+
+    # ── 5. Semantic question that mentions a filter (hybrid) ─────────────────
+    #       e.g. "what do US customers say about refunds?"
+    if filters and has_sem:
+        return RouteResult(
+            mode="HYBRID",
+            country=country, rating=rating,
+            limit=_extract_limit(question, default=10),
+            filters=filters,
+        )
+
+    # ── 6. Default: pure semantic ────────────────────────────────────────────
+    return RouteResult(mode="SEMANTIC", filters=filters)
