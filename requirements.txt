@@ -3,6 +3,6 @@ uvicorn
 pandas
 psycopg[binary]
 pgvector
-sentence-transformers
+fastembed
 groq
 python-dotenv

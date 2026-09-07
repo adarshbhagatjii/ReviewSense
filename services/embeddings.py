@@ -1,18 +1,11 @@
-# services/embeddings.py
+from fastembed import TextEmbedding
 
-from sentence_transformers import SentenceTransformer
-
-
-model = SentenceTransformer(
-    "sentence-transformers/all-MiniLM-L6-v2"
+model = TextEmbedding(
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
 )
 
 
 def create_embedding(text):
-
-    embedding = model.encode(
-        text,
-        normalize_embeddings=True
-    )
+    embedding = list(model.embed([text]))[0]
 
     return embedding.tolist()
