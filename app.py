@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-
+from fastapi.staticfiles import StaticFiles
 from chatbot import ask_question
 from services.mcp_tools import TOOLS
 
@@ -25,6 +25,7 @@ app = FastAPI(
     ),
     version="3.0.0",
 )
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
