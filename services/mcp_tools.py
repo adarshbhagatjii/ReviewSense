@@ -1,12 +1,4 @@
-# services/mcp_tools.py
-#
-# MCP (Model Context Protocol) tool definitions.
-#
-# Each tool is a plain callable that accepts typed arguments and returns
-# JSON-serialisable data.  The tool registry at the bottom of this module
-# is what app.py exposes on the  GET /tools  and  POST /tools/{name}
-# endpoints.
-#
+
 # Tools
 # ─────
 #   get_review_by_id(review_id)

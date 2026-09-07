@@ -1,12 +1,4 @@
-# chatbot.py
-#
-# Public entry point for the RAG chatbot.
-#
-# The rule-based router has been replaced by an LLM Supervisor Agent
-# (services/supervisor.py) that uses OpenAI-compatible tool calling to
-# autonomously select and execute the correct retrieval strategy.
-#
-# ask_question(question) is the only function consumed by app.py.
+
 
 from __future__ import annotations
 

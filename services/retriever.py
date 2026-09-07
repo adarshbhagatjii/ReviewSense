@@ -1,5 +1,4 @@
-# services/retriever.py
-#
+
 # Retrieval layer — three modes:
 #
 #   semantic_search(query, k)
